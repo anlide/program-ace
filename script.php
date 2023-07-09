@@ -44,6 +44,9 @@ try {
   die($exception->getMessage());
 }
 // TODO: put extracted files from the temporary folder to main folder
+//// TODO: find all ".xhtml" files, throw an Exception if there are few files
+//// TODO: copy ".xhtml" file to the "work" folder
+//// TODO: copy all related files (img, css) to the ".xhtml" file to the "work" folder
 // TODO: parse ".xhtml" file
 // TODO: build JSON from the parsed file
 // TODO: report output
