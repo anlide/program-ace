@@ -110,7 +110,7 @@ function findAndCopyXhtmlToWork(): string {
 }
 
 /**
- * @param $filename
+ * @param string $filename
  * @return Dom
  * @throws \PHPHtmlParser\Exceptions\ChildNotFoundException
  * @throws \PHPHtmlParser\Exceptions\CircularException
@@ -118,35 +118,34 @@ function findAndCopyXhtmlToWork(): string {
  * @throws \PHPHtmlParser\Exceptions\LogicalException
  * @throws \PHPHtmlParser\Exceptions\StrictException
  */
-function parseXhtmlFile($filename): Dom {
-  $dom = new Dom;
-  return @$dom->loadFromFile($filename);
+function getDomFromXhtmlFile(string $filename): Dom {
+  return @(new Dom)->loadFromFile($filename);
 }
 
-// NOTE: create empty directories (delete previous run)
-rrmdir(PATH_WORK);
-mkdir(PATH_WORK);
-mkdir(PATH_WORK_XHTML);
-mkdir(PATH_WORK_IMG);
-mkdir(PATH_WORK_CSS);
-rrmdir(PATH_TMP);
-mkdir(PATH_TMP);
-// NOTE: unzip file "test.zip" to temporary folder
+function parseDOMtoJson(Dom $dom): array {
+  $json = [];
+
+  return $json;
+}
+
 try {
+  // NOTE: create empty directories (delete previous run)
+  rrmdir(PATH_WORK);
+  mkdir(PATH_WORK);
+  mkdir(PATH_WORK_XHTML);
+  mkdir(PATH_WORK_IMG);
+  mkdir(PATH_WORK_CSS);
+  rrmdir(PATH_TMP);
+  mkdir(PATH_TMP);
+  // NOTE: unzip file "test.zip" to temporary folder
   extractZipToTmp();
-} catch (\Exception $exception) {
-  die($exception->getMessage());
-}
-// NOTE: put extracted files from the temporary folder to main folder
-try {
+  // NOTE: put extracted files from the temporary folder to main folder
   $filename = findAndCopyXhtmlToWork();
+  // NOTE: parse ".xhtml" file and build JSON from the parsed file
+  $dom = getDomFromXhtmlFile($filename);
+  // TODO: report JSON file
+  $json = parseDOMtoJson($dom);
+  var_dump($json);
 } catch (\Exception $exception) {
   die($exception->getMessage());
 }
-// NOTE: parse ".xhtml" file and build JSON from the parsed file
-try {
-  $dom = parseXhtmlFile($filename);
-} catch (\Exception $exception) {
-  die($exception->getMessage());
-}
-// TODO: report JSON file
