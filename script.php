@@ -5,6 +5,9 @@ const PATH_WORK_XHTML = 'work/name_project';
 const PATH_WORK_IMG = 'work/images';
 const PATH_WORK_CSS = 'work/styleImages';
 
+require "vendor/autoload.php";
+use PHPHtmlParser\Dom;
+
 /**
  * @param $dir
  * @return void
@@ -90,17 +93,34 @@ function recursiveCopy($from, $to): void {
 }
 
 /**
- * @return void
+ * @return string
  * @throws Exception
  */
-function findAndCopyXhtmlToWork(): void {
+function findAndCopyXhtmlToWork(): string {
   $filename = findXhtmlFile(PATH_TMP);
-  if (!copy($filename, PATH_WORK_XHTML . '/' . pathinfo($filename)['basename'])) {
+  $destinationFilename = PATH_WORK_XHTML . '/' . pathinfo($filename)['basename'];
+  if (!copy($filename, $destinationFilename)) {
     throw new Exception('Unable to copy file: ' . $filename);
   }
   $path = pathinfo($filename)['dirname'];
   recursiveCopy($path . '/images', PATH_WORK_IMG);
   recursiveCopy($path . '/css', PATH_WORK_CSS);
+
+  return $destinationFilename;
+}
+
+/**
+ * @param $filename
+ * @return Dom
+ * @throws \PHPHtmlParser\Exceptions\ChildNotFoundException
+ * @throws \PHPHtmlParser\Exceptions\CircularException
+ * @throws \PHPHtmlParser\Exceptions\ContentLengthException
+ * @throws \PHPHtmlParser\Exceptions\LogicalException
+ * @throws \PHPHtmlParser\Exceptions\StrictException
+ */
+function parseXhtmlFile($filename): Dom {
+  $dom = new Dom;
+  return @$dom->loadFromFile($filename);
 }
 
 // NOTE: create empty directories (delete previous run)
@@ -119,12 +139,14 @@ try {
 }
 // NOTE: put extracted files from the temporary folder to main folder
 try {
-  findAndCopyXhtmlToWork();
+  $filename = findAndCopyXhtmlToWork();
 } catch (\Exception $exception) {
   die($exception->getMessage());
 }
-//// TODO: copy ".xhtml" file to the "work" folder
-//// TODO: copy all related files (img, css) to the ".xhtml" file to the "work" folder
-// TODO: parse ".xhtml" file
-// TODO: build JSON from the parsed file
-// TODO: report output
+// NOTE: parse ".xhtml" file and build JSON from the parsed file
+try {
+  $dom = parseXhtmlFile($filename);
+} catch (\Exception $exception) {
+  die($exception->getMessage());
+}
+// TODO: report JSON file
