@@ -10,6 +10,7 @@ const JSON_BLOCKS_BLOCKID = 'blockId';
 const JSON_BLOCKS_HTML = 'html';
 const JSON_IMAGES = 'images';
 const JSON_IMAGES_IMAGEID = 'imageId';
+const JSON_IMAGES_PATH = 'path';
 const JSON_IMAGES_CAPTION = 'caption';
 const JSON_TABLES = 'tables';
 const JSON_TABLES_TABLEID = 'tableId';
@@ -139,10 +140,15 @@ function parseDOMtoJson(Dom $dom): array {
   $json[JSON_BLOCKS] = [];
   $json[JSON_BLOCKS][JSON_BLOCKS_BLOCKID] = uniqid(JSON_BLOCKS, true);
   $json[JSON_BLOCKS][JSON_BLOCKS_HTML] = '';
-  // TODO: Make images part
+  // NOTE: Make images part
   $json[JSON_IMAGES] = [];
-  $json[JSON_IMAGES][JSON_IMAGES_IMAGEID] = uniqid(JSON_IMAGES, true);
-  $json[JSON_IMAGES][JSON_IMAGES_CAPTION] = '';
+  $images = $dom->find('img');
+  foreach ($images as $image) {
+    $jsonImage = [JSON_IMAGES_IMAGEID => uniqid(JSON_IMAGES, true)];
+    $jsonImage[JSON_IMAGES_PATH] = $image->getAttribute('src');
+    $jsonImage[JSON_IMAGES_CAPTION] = $image->getAttribute('alt');;
+    $json[JSON_IMAGES][] = $jsonImage;
+  }
   // TODO: Make tables part
   $json[JSON_TABLES] = [];
   $json[JSON_TABLES][JSON_TABLES_TABLEID] = uniqid(JSON_TABLES, true);
