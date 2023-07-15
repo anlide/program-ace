@@ -5,6 +5,17 @@ const PATH_WORK_XHTML = 'work/name_project';
 const PATH_WORK_IMG = 'work/images';
 const PATH_WORK_CSS = 'work/styleImages';
 
+const JSON_BLOCKS = 'blocks';
+const JSON_BLOCKS_BLOCKID = 'blockId';
+const JSON_BLOCKS_HTML = 'html';
+const JSON_IMAGES = 'images';
+const JSON_IMAGES_IMAGEID = 'imageId';
+const JSON_IMAGES_CAPTION = 'caption';
+const JSON_TABLES = 'tables';
+const JSON_TABLES_TABLEID = 'tableId';
+const JSON_TABLES_HTML = 'html';
+const JSON_TABLES_CAPTION = 'caption';
+
 require "vendor/autoload.php";
 use PHPHtmlParser\Dom;
 
@@ -124,6 +135,19 @@ function getDomFromXhtmlFile(string $filename): Dom {
 
 function parseDOMtoJson(Dom $dom): array {
   $json = [];
+  // TODO: Make blocks part
+  $json[JSON_BLOCKS] = [];
+  $json[JSON_BLOCKS][JSON_BLOCKS_BLOCKID] = uniqid(JSON_BLOCKS, true);
+  $json[JSON_BLOCKS][JSON_BLOCKS_HTML] = '';
+  // TODO: Make images part
+  $json[JSON_IMAGES] = [];
+  $json[JSON_IMAGES][JSON_IMAGES_IMAGEID] = uniqid(JSON_IMAGES, true);
+  $json[JSON_IMAGES][JSON_IMAGES_CAPTION] = '';
+  // TODO: Make tables part
+  $json[JSON_TABLES] = [];
+  $json[JSON_TABLES][JSON_TABLES_TABLEID] = uniqid(JSON_TABLES, true);
+  $json[JSON_TABLES][JSON_TABLES_CAPTION] = '';
+  $json[JSON_TABLES][JSON_TABLES_HTML] = '';
 
   return $json;
 }
@@ -141,10 +165,11 @@ try {
   extractZipToTmp();
   // NOTE: put extracted files from the temporary folder to main folder
   $filename = findAndCopyXhtmlToWork();
-  // NOTE: parse ".xhtml" file and build JSON from the parsed file
+  // NOTE: parse ".xhtml" file
   $dom = getDomFromXhtmlFile($filename);
-  // TODO: report JSON file
+  // NOTE: build JSON from the parsed file
   $json = parseDOMtoJson($dom);
+  // NOTE: report JSON file
   var_dump($json);
 } catch (\Exception $exception) {
   die($exception->getMessage());
