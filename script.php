@@ -20,6 +20,7 @@ const JSON_TABLES_CAPTION = 'caption';
 
 require "vendor/autoload.php";
 use PHPHtmlParser\Dom;
+use PHPHtmlParser\Dom\Node;
 use PHPHtmlParser\Dom\Node\AbstractNode;
 use PHPHtmlParser\Exceptions\ParentNotFoundException;
 
@@ -146,7 +147,7 @@ function getDomFromXhtmlFile(string $filename): Dom {
  * @throws \PHPHtmlParser\Exceptions\Tag\AttributeNotFoundException
  * @throws \stringEncode\Exception
  */
-function ancestorByTagAndClass(PHPHtmlParser\Dom\Node\AbstractNode $node, string $tag, string $class): PHPHtmlParser\Dom\Node\AbstractNode {
+function ancestorByTagAndClass(AbstractNode $node, string $tag, string $class): AbstractNode {
   do {
     if (($node->tag->name() == $tag) && ($node->getAttribute('class') == $class)) {
       return $node;
@@ -178,11 +179,11 @@ function parseDOMtoJson(Dom $dom): array {
     $jsonImage[JSON_IMAGES_CAPTION] = $image->getAttribute('alt');;
     try {
       $figure = $image->ancestorByTag('figure');
-      $figcaptions = $figure->find('figcaption');
-      if (count($figcaptions) !== 1) {
+      $figCaptions = $figure->find('figcaption');
+      if (count($figCaptions) !== 1) {
         throw new Exception('Wrong format figcaption');
       }
-      $jsonImage[JSON_IMAGES_CAPTION] = $figcaptions[0]->innerHtml();
+      $jsonImage[JSON_IMAGES_CAPTION] = $figCaptions[0]->innerHtml();
     } catch (ParentNotFoundException|Exception $exception) {
     } finally {
       $json[JSON_IMAGES][] = $jsonImage;
