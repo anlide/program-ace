@@ -12,6 +12,7 @@ const JSON_IMAGES = 'images';
 const JSON_IMAGES_IMAGEID = 'imageId';
 const JSON_IMAGES_PATH = 'path';
 const JSON_IMAGES_CAPTION = 'caption';
+const JSON_IMAGES_CAPTION_LIMIT = 3000;
 const JSON_TABLES = 'tables';
 const JSON_TABLES_TABLEID = 'tableId';
 const JSON_TABLES_HTML = 'html';
@@ -19,6 +20,7 @@ const JSON_TABLES_CAPTION = 'caption';
 
 require "vendor/autoload.php";
 use PHPHtmlParser\Dom;
+use PHPHtmlParser\Exceptions\ParentNotFoundException;
 
 /**
  * @param $dir
@@ -147,13 +149,29 @@ function parseDOMtoJson(Dom $dom): array {
     $jsonImage = [JSON_IMAGES_IMAGEID => uniqid(JSON_IMAGES, true)];
     $jsonImage[JSON_IMAGES_PATH] = $image->getAttribute('src');
     $jsonImage[JSON_IMAGES_CAPTION] = $image->getAttribute('alt');;
-    $json[JSON_IMAGES][] = $jsonImage;
+    try {
+      $figure = $image->ancestorByTag('figure');
+      $figcaptions = $figure->find('figcaption');
+      if (count($figcaptions) !== 1) {
+        throw new Exception('Wrong format figcaption');
+      }
+      $jsonImage[JSON_IMAGES_CAPTION] = $figcaptions[0]->innerHtml();
+    } catch (ParentNotFoundException|Exception $exception) {
+      continue;
+    } finally {
+      $jsonImage[JSON_IMAGES_CAPTION] = substr($jsonImage[JSON_IMAGES_CAPTION], 0, JSON_IMAGES_CAPTION_LIMIT);
+      $json[JSON_IMAGES][] = $jsonImage;
+    }
   }
-  // TODO: Make tables part
+  // NOTE: Make tables part
   $json[JSON_TABLES] = [];
-  $json[JSON_TABLES][JSON_TABLES_TABLEID] = uniqid(JSON_TABLES, true);
-  $json[JSON_TABLES][JSON_TABLES_CAPTION] = '';
-  $json[JSON_TABLES][JSON_TABLES_HTML] = '';
+  $tables = $dom->find('table');
+  foreach ($tables as $table) {
+    $jsonTable = [JSON_TABLES_TABLEID => uniqid(JSON_TABLES, true)];
+    $jsonTable[JSON_TABLES][JSON_TABLES_CAPTION] = '';
+    $jsonTable[JSON_TABLES][JSON_TABLES_HTML] = '';
+    $json[JSON_TABLES][] = $jsonTable;
+  }
 
   return $json;
 }
