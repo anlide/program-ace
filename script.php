@@ -8,11 +8,11 @@ const PATH_WORK_CSS = 'work/styleImages';
 const JSON_BLOCKS = 'blocks';
 const JSON_BLOCKS_BLOCKID = 'blockId';
 const JSON_BLOCKS_HTML = 'html';
+const JSON_BLOCKS_HTML_LIMIT = 3000;
 const JSON_IMAGES = 'images';
 const JSON_IMAGES_IMAGEID = 'imageId';
 const JSON_IMAGES_PATH = 'path';
 const JSON_IMAGES_CAPTION = 'caption';
-const JSON_IMAGES_CAPTION_LIMIT = 3000;
 const JSON_TABLES = 'tables';
 const JSON_TABLES_TABLEID = 'tableId';
 const JSON_TABLES_HTML = 'html';
@@ -20,6 +20,7 @@ const JSON_TABLES_CAPTION = 'caption';
 
 require "vendor/autoload.php";
 use PHPHtmlParser\Dom;
+use PHPHtmlParser\Dom\Node\AbstractNode;
 use PHPHtmlParser\Exceptions\ParentNotFoundException;
 
 /**
@@ -136,6 +137,27 @@ function getDomFromXhtmlFile(string $filename): Dom {
   return @(new Dom)->loadFromFile($filename);
 }
 
+/**
+ * @param AbstractNode $node
+ * @param string $tag
+ * @param string $class
+ * @return AbstractNode
+ * @throws ParentNotFoundException
+ * @throws \PHPHtmlParser\Exceptions\Tag\AttributeNotFoundException
+ * @throws \stringEncode\Exception
+ */
+function ancestorByTagAndClass(PHPHtmlParser\Dom\Node\AbstractNode $node, string $tag, string $class): PHPHtmlParser\Dom\Node\AbstractNode {
+  do {
+    if (($node->tag->name() == $tag) && ($node->getAttribute('class') == $class)) {
+      return $node;
+    }
+
+    $node = $node->getParent();
+  } while ($node !== null);
+
+  throw new ParentNotFoundException('Could not find an ancestor with "' . $tag . '" tag and class "' . $class . '"');
+}
+
 function parseDOMtoJson(Dom $dom): array {
   $json = [];
   // NOTE: Make blocks part
@@ -144,6 +166,7 @@ function parseDOMtoJson(Dom $dom): array {
   foreach ($sections as $section) {
     $jsonSection = [JSON_BLOCKS_BLOCKID => uniqid(JSON_BLOCKS, true)];
     $jsonSection[JSON_BLOCKS_HTML] = $section->innerHtml();
+    $jsonSection[JSON_BLOCKS_HTML] = substr($jsonSection[JSON_BLOCKS_HTML], 0, JSON_BLOCKS_HTML_LIMIT); // TODO: Make limit on text exclude tags
     $json[JSON_BLOCKS][] = $jsonSection;
   }
   // NOTE: Make images part
@@ -161,9 +184,7 @@ function parseDOMtoJson(Dom $dom): array {
       }
       $jsonImage[JSON_IMAGES_CAPTION] = $figcaptions[0]->innerHtml();
     } catch (ParentNotFoundException|Exception $exception) {
-      continue;
     } finally {
-      $jsonImage[JSON_IMAGES_CAPTION] = substr($jsonImage[JSON_IMAGES_CAPTION], 0, JSON_IMAGES_CAPTION_LIMIT);
       $json[JSON_IMAGES][] = $jsonImage;
     }
   }
@@ -174,7 +195,14 @@ function parseDOMtoJson(Dom $dom): array {
     $jsonTable = [JSON_TABLES_TABLEID => uniqid(JSON_TABLES, true)];
     $jsonTable[JSON_TABLES][JSON_TABLES_CAPTION] = '';
     $jsonTable[JSON_TABLES][JSON_TABLES_HTML] = $table->innerHtml();
-    $json[JSON_TABLES][] = $jsonTable;
+    try {
+      $divTable = ancestorByTagAndClass($table, 'div', 'Table');
+      $caption = $divTable->find('div.Caption .CaptionContent')->innerHtml();
+      $jsonTable[JSON_TABLES][JSON_TABLES_CAPTION] = $caption;
+    } catch (ParentNotFoundException) {
+    } finally {
+      $json[JSON_TABLES][] = $jsonTable;
+    }
   }
 
   return $json;

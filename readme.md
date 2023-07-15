@@ -46,3 +46,5 @@ c. Footnotes и References помещаем в отдельный блок, бе
 Выполнить
 
 "php script.php"
+
+Результат в файле "json.txt"
