@@ -138,10 +138,14 @@ function getDomFromXhtmlFile(string $filename): Dom {
 
 function parseDOMtoJson(Dom $dom): array {
   $json = [];
-  // TODO: Make blocks part
+  // NOTE: Make blocks part
   $json[JSON_BLOCKS] = [];
-  $json[JSON_BLOCKS][JSON_BLOCKS_BLOCKID] = uniqid(JSON_BLOCKS, true);
-  $json[JSON_BLOCKS][JSON_BLOCKS_HTML] = '';
+  $sections = $dom->find('section');
+  foreach ($sections as $section) {
+    $jsonSection = [JSON_BLOCKS_BLOCKID => uniqid(JSON_BLOCKS, true)];
+    $jsonSection[JSON_BLOCKS_HTML] = $section->innerHtml();
+    $json[JSON_BLOCKS][] = $jsonSection;
+  }
   // NOTE: Make images part
   $json[JSON_IMAGES] = [];
   $images = $dom->find('img');
@@ -169,7 +173,7 @@ function parseDOMtoJson(Dom $dom): array {
   foreach ($tables as $table) {
     $jsonTable = [JSON_TABLES_TABLEID => uniqid(JSON_TABLES, true)];
     $jsonTable[JSON_TABLES][JSON_TABLES_CAPTION] = '';
-    $jsonTable[JSON_TABLES][JSON_TABLES_HTML] = '';
+    $jsonTable[JSON_TABLES][JSON_TABLES_HTML] = $table->innerHtml();
     $json[JSON_TABLES][] = $jsonTable;
   }
 
@@ -194,7 +198,7 @@ try {
   // NOTE: build JSON from the parsed file
   $json = parseDOMtoJson($dom);
   // NOTE: report JSON file
-  var_dump($json);
+  file_put_contents('json.txt', json_encode($json));
 } catch (\Exception $exception) {
   die($exception->getMessage());
 }
